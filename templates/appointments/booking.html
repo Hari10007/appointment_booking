@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book Appointment</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h2 class="text-center">Book an Appointment</h2>
+      <form id="booking-form" class="mt-4">
+        <div class="mb-3">
+          <input
+            type="text"
+            id="name"
+            class="form-control"
+            placeholder="Name"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <input
+            type="text"
+            id="phone"
+            class="form-control"
+            placeholder="Phone Number"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <input type="date" id="date" class="form-control" required />
+        </div>
+        <div class="mb-3">
+          <select id="time-slot" class="form-select">
+            <option value="">Select Time Slot</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Book</button>
+      </form>
+      <div id="message" class="mt-3 text-center"></div>
+
+      <div id="booked-appointments" class="mt-4">
+        <h4>Booked Appointments</h4>
+        <ul id="appointments-list" class="list-group"></ul>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchBookedAppointments();
+        document
+          .getElementById("date")
+          .addEventListener("change", fetchAvailableSlots);
+        document
+          .getElementById("booking-form")
+          .addEventListener("submit", bookAppointment);
+      });
+
+      function fetchAvailableSlots() {
+        const date = document.getElementById("date").value;
+        if (!date) return;
+
+        fetch(`/available-slots/${date}/`)
+          .then((response) => response.json())
+          .then((data) => {
+            const timeSlotSelect = document.getElementById("time-slot");
+            timeSlotSelect.innerHTML =
+              '<option value="">Select Time Slot</option>';
+            data.available_slots.forEach((slot) => {
+              let option = document.createElement("option");
+              option.value = slot;
+              option.textContent = slot;
+              timeSlotSelect.appendChild(option);
+            });
+          })
+          .catch((error) => console.error("Error fetching time slots:", error));
+      }
+
+      function formatTime(time) {
+        if (!time) return "";
+        const timeObj = new Date(`1970-01-01 ${time}`);
+        return timeObj.toTimeString().split(" ")[0];
+      }
+
+      function bookAppointment(event) {
+        event.preventDefault();
+
+        const name = document.getElementById("name").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const date = document.getElementById("date").value;
+        const timeSlot = formatTime(document.getElementById("time-slot").value);
+
+        if (!name || !phone || !date || !timeSlot) {
+          showMessage("All fields are required!", "danger");
+          return;
+        }
+
+        const data = { name, phone_number: phone, date, time_slot: timeSlot };
+
+        fetch("/book-appointment/", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((response) => response.json())
+          .then((responseData) => {
+            showMessage("Appointment booked successfully!", "success");
+            fetchBookedAppointments();
+          })
+          .catch((error) => {
+            console.error("Error booking appointment:", error);
+            showMessage("Failed to book appointment", "danger");
+          });
+      }
+
+      function fetchBookedAppointments() {
+        fetch("/booked-appointments/")
+          .then((response) => response.json())
+          .then((data) => {
+            const appointmentsList =
+              document.getElementById("appointments-list");
+            appointmentsList.innerHTML = "";
+
+            data.forEach((appointment) => {
+              let listItem = document.createElement("li");
+              listItem.classList.add("list-group-item");
+              listItem.textContent = `${appointment.name} - ${appointment.date} at ${appointment.time_slot}`;
+              appointmentsList.appendChild(listItem);
+            });
+          })
+          .catch((error) =>
+            console.error("Error fetching appointments:", error)
+          );
+      }
+
+      function showMessage(message, type) {
+        const messageDiv = document.getElementById("message");
+        messageDiv.textContent = message;
+        messageDiv.className = `mt-3 text-center alert alert-${type}`;
+        setTimeout(() => {
+          messageDiv.textContent = "";
+          messageDiv.className = "";
+        }, 3000);
+      }
+    </script>
+  </body>
+</html>
