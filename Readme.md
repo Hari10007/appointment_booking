@@ -42,7 +42,12 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-### 5 Run the Development Server
+### 5 Collect Static
+```bash
+python manage.py collectstatic
+```
+
+### 6 Run the Development Server
 
 ```bash
 python manage.py runserver
