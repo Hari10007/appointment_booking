@@ -17,7 +17,7 @@ This is a Django-based Appointment Booking System that allows users to book appo
 ### 1️ Clone the Repository
 
 ```bash
-git clone https://github.com/your-repo/appointment-booking.git
+git clone https://github.com/Hari10007/appointment_booking.git
 cd appointment-booking
 ```
 
